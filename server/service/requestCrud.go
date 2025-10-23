@@ -27,8 +27,12 @@ type RequestCrudService struct {
 	logger *zap.SugaredLogger
 }
 
+type IRequestCrudService interface {
+	List(params ListRequestsParams) ([]model.Request, int64, error)
+}
+
 // NewRequestCRUDService is your constructor from the snippet.
-func NewRequestCrudService() *RequestCrudService {
+func NewRequestCrudService() IRequestCrudService {
 	var service *RequestCrudService
 
 	app.Invoke(func(db *gorm.DB, logger *zap.SugaredLogger) {
@@ -51,7 +55,7 @@ func (s *RequestCrudService) List(params ListRequestsParams) ([]model.Request, i
 
 	// --- Apply Search ---
 	if params.Search != nil && *params.Search != "" {
-		query = query.Where("path ILIKE ?", "%"+*params.Search+"%")
+		query = query.Where("path LIKE ?", "%"+*params.Search+"%")
 	}
 
 	if params.Method != nil && *params.Method != "" {
@@ -59,7 +63,7 @@ func (s *RequestCrudService) List(params ListRequestsParams) ([]model.Request, i
 	}
 	if params.Response != nil {
 		// Use a pointer to allow filtering for '0', though '0' is not a real HTTP status.
-		query = query.Where("response_code = ?", *params.Response)
+		query = query.Where("response = ?", *params.Response)
 	}
 
 	// --- Get Total Count (before pagination) ---

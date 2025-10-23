@@ -16,7 +16,7 @@ func main() {
 	// Provide logger
 	app.Provide(zap.S)
 
-	app.Provide(service.NewRequestService)
+	app.Provide(service.NewRequestLoggerService)
 	app.Provide(service.NewRequestCrudService)
 
 	app.RegisterController(controller.NewInfoCnt)

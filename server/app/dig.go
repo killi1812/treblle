@@ -9,7 +9,9 @@ var digContainer *dig.Container = nil
 
 // Test configures app so that it can be used in unit testing
 func Test() {
-	digContainer = dig.New()
+	if digContainer == nil {
+		digContainer = dig.New()
+	}
 }
 
 // Provide is a wrapper around digs Provide on a global container

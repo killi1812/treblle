@@ -11,17 +11,17 @@ import (
 )
 
 type ReqLogger struct {
-	db     *gorm.DB
-	logger *zap.SugaredLogger
+	Db     *gorm.DB
+	Logger *zap.SugaredLogger
 }
 
-func NewRequestService() app.RequestLogger {
+func NewRequestLoggerService() app.RequestLogger {
 	var service *ReqLogger
 
 	app.Invoke(func(db *gorm.DB, logger *zap.SugaredLogger) {
 		service = &ReqLogger{
-			db:     db,
-			logger: logger,
+			Db:     db,
+			Logger: logger,
 		}
 	})
 
@@ -31,13 +31,13 @@ func NewRequestService() app.RequestLogger {
 func (r *ReqLogger) LogRequest(req *http.Request) (*model.Request, error) {
 	var request model.Request
 	if err := request.FromRequest(req); err != nil {
-		r.logger.Errorf("Failed logging request, error = %v", err)
+		r.Logger.Errorf("Failed logging request, error = %v", err)
 		return nil, err
 	}
 
-	rez := r.db.Create(&request)
+	rez := r.Db.Create(&request)
 	if rez.Error != nil {
-		r.logger.Errorf("Failed logging request, error = %v", rez.Error)
+		r.Logger.Errorf("Failed logging request, error = %v", rez.Error)
 		return nil, rez.Error
 	}
 
@@ -47,8 +47,8 @@ func (r *ReqLogger) LogRequest(req *http.Request) (*model.Request, error) {
 func (r *ReqLogger) LogResponse(id uint, resp *http.Response) (*model.Request, error) {
 	var request model.Request
 
-	if rez := r.db.First(&request, id); rez.Error != nil {
-		r.logger.Errorf("Failed reading request, error = %v", rez.Error)
+	if rez := r.Db.First(&request, id); rez.Error != nil {
+		r.Logger.Errorf("Failed reading request, error = %v", rez.Error)
 		return nil, rez.Error
 	}
 
@@ -57,8 +57,8 @@ func (r *ReqLogger) LogResponse(id uint, resp *http.Response) (*model.Request, e
 	request.Latency = request.ResponseTime.Sub(request.CreatedAt)
 	zap.S().Debugf("req latency is: %v ", request.Latency.Milliseconds())
 
-	if rez := r.db.Save(&request); rez.Error != nil {
-		r.logger.Errorf("Failed logging request, error = %v", rez.Error)
+	if rez := r.Db.Save(&request); rez.Error != nil {
+		r.Logger.Errorf("Failed logging request, error = %v", rez.Error)
 		return nil, rez.Error
 	}
 

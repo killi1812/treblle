@@ -4,7 +4,7 @@ vars:
   BINARY_DIR: ./build
   # TODO: change project name
   PACKAGE: "treblle"
-  TEST_PCKGS: "./util/* ./controller ./service ./dto "
+  TEST_PCKGS: "./controller ./service ./dto "
 
 tasks:
   default:

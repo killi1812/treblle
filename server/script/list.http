@@ -1,9 +1,66 @@
-
+### Variables
 @host = http://localhost
 @port = 8090
-
-# List API requests with a limit
-GET {{host}}:{{port}}/api/requests?limit=20 HTTP/1.1
-accept: application/json
+@baseUrl = {{host}}:{{port}}/api
 
 ###
+# @name Get Server Info
+# Get build and version information about the server.
+GET {{baseUrl}}/info
+Accept: application/json
+
+###
+# @name List Requests (Default Limit)
+# Get the first page of requests (default limit, usually 20).
+GET {{baseUrl}}/requests
+Accept: application/json
+
+###
+# @name List Requests (Specific Limit)
+# Get only 5 requests.
+GET {{baseUrl}}/requests?limit=5
+Accept: application/json
+
+###
+# @name List Requests (Pagination)
+# Get the second page of 10 requests (offset 10, limit 10).
+GET {{baseUrl}}/requests?limit=10&offset=10
+Accept: application/json
+
+###
+# @name List Requests (Search Path)
+# Find requests where the path contains "products".
+GET {{baseUrl}}/requests?search=products
+Accept: application/json
+
+###
+# @name List Requests (Filter by Method)
+# Get only POST requests.
+GET {{baseUrl}}/requests?method=POST
+Accept: application/json
+
+###
+# @name List Requests (Filter by Response Code)
+# Get only requests that resulted in a 404 Not Found.
+GET {{baseUrl}}/requests?response=404
+Accept: application/json
+
+###
+# @name List Requests (Sort by Creation Time Ascending)
+# Get requests sorted by creation time, oldest first.
+GET {{baseUrl}}/requests?sort_by=created_at&order=asc
+Accept: application/json
+
+###
+# @name List Requests (Sort by Response Time Descending)
+# Get requests sorted by response time (latency), slowest first.
+# NOTE: Ensure your service correctly maps 'response_time' to the latency/duration column.
+GET {{baseUrl}}/requests?sort_by=response_time&order=desc
+Accept: application/json
+
+###
+# @name List Requests (Combined Filters and Sort)
+# Get GET requests with status 200, sorted by latency descending (slowest first).
+GET {{baseUrl}}/requests?method=GET&response=200&sort_by=response_time&order=desc&limit=50
+Accept: application/json
+

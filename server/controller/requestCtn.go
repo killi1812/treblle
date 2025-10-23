@@ -11,17 +11,17 @@ import (
 )
 
 type RequestCtn struct {
-	logger  *zap.SugaredLogger
-	crudSrv *service.RequestCrudService
+	Logger  *zap.SugaredLogger
+	CrudSrv service.IRequestCrudService
 }
 
 // NewRequestCtn crates new controller with its sependencies
 func NewRequestCtn() app.Controller {
 	var controller *RequestCtn
-	app.Invoke(func(logger *zap.SugaredLogger, service *service.RequestCrudService) {
+	app.Invoke(func(logger *zap.SugaredLogger, service service.IRequestCrudService) {
 		controller = &RequestCtn{
-			logger:  logger,
-			crudSrv: service,
+			Logger:  logger,
+			CrudSrv: service,
 		}
 	})
 	return controller
@@ -53,7 +53,7 @@ func (cnt *RequestCtn) RegisterEndpoints(router *gin.RouterGroup) {
 func (cnt *RequestCtn) ListRequests(c *gin.Context) {
 	var q dto.ListQuery
 	if err := c.ShouldBindQuery(&q); err != nil {
-		cnt.logger.Errorf("Failed to bind query params: %v", err)
+		cnt.Logger.Errorf("Failed to bind query params: %v", err)
 		c.JSON(http.StatusBadRequest, dto.ErrorDto{Error: "Invalid query parameters: " + err.Error()})
 		return
 	}
@@ -66,8 +66,6 @@ func (cnt *RequestCtn) ListRequests(c *gin.Context) {
 		q.Offset = 0
 	}
 
-	// --- 3. Map query params to the service params struct ---
-	// This layer of mapping is good practice.
 	params := service.ListRequestsParams{
 		Limit:  q.Limit,
 		Offset: q.Offset,
@@ -88,9 +86,9 @@ func (cnt *RequestCtn) ListRequests(c *gin.Context) {
 		params.Response = &q.Response
 	}
 
-	requests, total, err := cnt.crudSrv.List(params)
+	requests, total, err := cnt.CrudSrv.List(params)
 	if err != nil {
-		cnt.logger.Errorf("Service failed to list requests: %v", err)
+		cnt.Logger.Errorf("Service failed to list requests: %v", err)
 		c.JSON(http.StatusInternalServerError, dto.ErrorDto{Error: "Could not retrieve requests"})
 		return
 	}
