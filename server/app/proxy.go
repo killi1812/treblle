@@ -1,17 +1,22 @@
 package app
 
 import (
+	"context"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"treblle/model"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
+const _REQUEST_ID_KEY = "RequestIdKey"
+
 type RequestLogger interface {
-	LogRequest(req *http.Request) error
+	LogRequest(req *http.Request) (*model.Request, error)
+	LogResponse(id uint, resp *http.Response) (*model.Request, error)
 }
 
 func Proxy(router *gin.RouterGroup) {
@@ -37,10 +42,30 @@ func Proxy(router *gin.RouterGroup) {
 	})
 
 	proxyHandler := func(c *gin.Context) {
-		if err := reqLogger.LogRequest(c.Request); err != nil {
+		req, err := reqLogger.LogRequest(c.Request)
+		if err != nil {
 			zap.S().Errorf("Failed to log request, error %v", err)
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
 		}
+
+		ctx := context.WithValue(c.Request.Context(), _REQUEST_ID_KEY, req.ID)
+		c.Request = c.Request.WithContext(ctx)
+		// ----------------------------------------
 		proxy.ServeHTTP(c.Writer, c.Request)
+	}
+
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		strData := resp.Request.Context().Value(_REQUEST_ID_KEY)
+		if strData != nil {
+			requestID := strData.(uint)
+			if _, err := reqLogger.LogResponse(requestID, resp); err != nil {
+				zap.S().Errorf("Failed to log response, error %v", err)
+				return err
+			}
+		}
+
+		return nil
 	}
 
 	router.Any("/*proxyPath", proxyHandler)
