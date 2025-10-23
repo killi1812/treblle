@@ -5,7 +5,6 @@ package model
 // GetAllModels returns an array of all models
 func GetAllModels() []any {
 	return []any{
-		&User{},
-		&Session{},
+		&Request{},
 	}
 }

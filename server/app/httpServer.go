@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"treblle/docs"
 	"time"
+	"treblle/docs"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -86,6 +86,8 @@ func run(ctx context.Context, wg *sync.WaitGroup) {
 	}
 
 	// setup controllers
+
+	Proxy(router.Group("/proxy"))
 	basePath := router.Group("/api")
 	for _, c := range controllers {
 		c.RegisterEndpoints(basePath)
