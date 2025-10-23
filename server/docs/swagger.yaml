@@ -13,6 +13,34 @@ definitions:
       total:
         type: integer
     type: object
+  dto.PathStatistics:
+    properties:
+      average_latency_ms:
+        type: number
+      client_error_count:
+        type: integer
+      path:
+        type: string
+      request_count:
+        type: integer
+      server_error_count:
+        type: integer
+    type: object
+  dto.RequestStatistics:
+    properties:
+      average_latency_ms:
+        type: number
+      client_error_count:
+        type: integer
+      request_count:
+        type: integer
+      requests_per_path:
+        items:
+          $ref: '#/definitions/dto.PathStatistics'
+        type: array
+      server_error_count:
+        type: integer
+    type: object
   dto.RequestsDto:
     properties:
       createdAt:
@@ -136,6 +164,41 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorDto'
       summary: List API requests
+      tags:
+      - Requests
+  /requests/statistics:
+    get:
+      consumes:
+      - application/json
+      description: Calculates statistics like average latency and error counts per
+        path, optionally filtered by a time range.
+      parameters:
+      - description: Start time for filtering (RFC3339 format, e.g., 2023-10-26T00:00:00Z)
+        format: date-time
+        in: query
+        name: start_time
+        type: string
+      - description: End time for filtering (RFC3339 format, e.g., 2023-10-26T23:59:59Z)
+        format: date-time
+        in: query
+        name: end_time
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Aggregated statistics per path
+          schema:
+            $ref: '#/definitions/dto.RequestStatistics'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorDto'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorDto'
+      summary: Get request statistics
       tags:
       - Requests
 swagger: "2.0"

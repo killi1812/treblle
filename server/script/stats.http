@@ -1,0 +1,47 @@
+### Variables
+@host = http://localhost
+@port = 8090
+@baseUrl = {{host}}:{{port}}/api
+
+###
+# -----------------------------------
+# /requests/statistics Endpoint Tests
+# -----------------------------------
+
+###
+# @name Get Statistics (All Time)
+# Get statistics for all recorded requests.
+GET {{baseUrl}}/requests/statistics
+Accept: application/json
+
+###
+# @name Get Statistics (With Start Time)
+# Get statistics for requests created on or after the specified time.
+# Replace the date with a valid RFC3339 timestamp.
+GET {{baseUrl}}/requests/statistics?start_time=2023-10-26T00:00:00Z
+Accept: application/json
+
+###
+# @name Get Statistics (With End Time)
+# Get statistics for requests created on or before the specified time.
+# Replace the date with a valid RFC3339 timestamp.
+GET {{baseUrl}}/requests/statistics?end_time=2023-10-26T23:59:59Z
+Accept: application/json
+
+###
+# @name Get Statistics (Specific Time Range)
+# Get statistics for requests created within a specific time range.
+# Replace the dates with valid RFC3339 timestamps.
+GET {{baseUrl}}/requests/statistics?start_time=2023-10-26T10:00:00Z&end_time=2023-10-26T12:00:00Z
+Accept: application/json
+
+###
+# @name Get Statistics (Invalid Time Format - Expect 400 Bad Request)
+GET {{baseUrl}}/requests/statistics?start_time=2023-10-26
+Accept: application/json
+
+###
+# @name Get Statistics (Start Time After End Time - Expect 400 Bad Request)
+GET {{baseUrl}}/requests/statistics?start_time=2023-10-27T00:00:00Z&end_time=2023-10-26T00:00:00Z
+Accept: application/json
+

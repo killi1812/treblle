@@ -134,6 +134,57 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/requests/statistics": {
+            "get": {
+                "description": "Calculates statistics like average latency and error counts per path, optionally filtered by a time range.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Requests"
+                ],
+                "summary": "Get request statistics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Start time for filtering (RFC3339 format, e.g., 2023-10-26T00:00:00Z)",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "End time for filtering (RFC3339 format, e.g., 2023-10-26T23:59:59Z)",
+                        "name": "end_time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Aggregated statistics per path",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestStatistics"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorDto"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorDto"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -155,6 +206,49 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.PathStatistics": {
+            "type": "object",
+            "properties": {
+                "average_latency_ms": {
+                    "type": "number"
+                },
+                "client_error_count": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "request_count": {
+                    "type": "integer"
+                },
+                "server_error_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.RequestStatistics": {
+            "type": "object",
+            "properties": {
+                "average_latency_ms": {
+                    "type": "number"
+                },
+                "client_error_count": {
+                    "type": "integer"
+                },
+                "request_count": {
+                    "type": "integer"
+                },
+                "requests_per_path": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PathStatistics"
+                    }
+                },
+                "server_error_count": {
                     "type": "integer"
                 }
             }

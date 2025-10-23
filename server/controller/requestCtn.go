@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"time"
 	"treblle/app"
 	"treblle/dto"
 	"treblle/service"
@@ -30,6 +31,7 @@ func NewRequestCtn() app.Controller {
 // RegisterEndpoints registers the image manipulation endpoints.
 func (cnt *RequestCtn) RegisterEndpoints(router *gin.RouterGroup) {
 	router.GET("/requests", cnt.ListRequests)
+	router.GET("/requests/statistics", cnt.GetRequestStatistics) // Register the new endpoint
 }
 
 // ListRequests godoc
@@ -107,4 +109,66 @@ func (cnt *RequestCtn) ListRequests(c *gin.Context) {
 			Offset: q.Offset,
 		},
 	})
+}
+
+// GetRequestStatistics godoc
+//
+//	@Summary		Get request statistics
+//	@Description	Calculates statistics like average latency and error counts per path, optionally filtered by a time range.
+//	@Tags			Requests
+//	@Accept			json
+//	@Produce		json
+//	@Param			start_time	query		string					false	"Start time for filtering (RFC3339 format, e.g., 2023-10-26T00:00:00Z)"	format(date-time)
+//	@Param			end_time	query		string					false	"End time for filtering (RFC3339 format, e.g., 2023-10-26T23:59:59Z)"	format(date-time)
+//	@Success		200			{object}	dto.RequestStatistics	"Aggregated statistics per path"
+//	@Failure		400			{object}	dto.ErrorDto
+//	@Failure		500			{object}	dto.ErrorDto
+//	@Router			/requests/statistics [get]
+func (cnt *RequestCtn) GetRequestStatistics(c *gin.Context) {
+	var startTimePtr *time.Time
+	var endTimePtr *time.Time
+	var err error
+
+	// Parse optional start_time
+	startTimeStr := c.Query("start_time")
+	if startTimeStr != "" {
+		parsedTime, err := time.Parse(time.RFC3339, startTimeStr)
+		if err != nil {
+			cnt.Logger.Warnf("Invalid start_time format: %v", err)
+			c.JSON(http.StatusBadRequest, dto.ErrorDto{Error: "Invalid start_time format. Use RFC3339 (e.g., 2023-10-26T00:00:00Z)"})
+			return
+		}
+		startTimePtr = &parsedTime
+	}
+
+	// Parse optional end_time
+	endTimeStr := c.Query("end_time")
+	if endTimeStr != "" {
+		parsedTime, err := time.Parse(time.RFC3339, endTimeStr)
+		if err != nil {
+			cnt.Logger.Warnf("Invalid end_time format: %v", err)
+			c.JSON(http.StatusBadRequest, dto.ErrorDto{Error: "Invalid end_time format. Use RFC3339 (e.g., 2023-10-26T23:59:59Z)"})
+			return
+		}
+		endTimePtr = &parsedTime
+	}
+
+	// Validate time range if both are provided
+	if startTimePtr != nil && endTimePtr != nil && startTimePtr.After(*endTimePtr) {
+		c.JSON(http.StatusBadRequest, dto.ErrorDto{Error: "start_time cannot be after end_time"})
+		return
+	}
+
+	// Call the service
+	stats, err := cnt.CrudSrv.GetStatistics(startTimePtr, endTimePtr)
+	if err != nil {
+		cnt.Logger.Errorf("Service failed to get request statistics: %v", err)
+		c.JSON(http.StatusInternalServerError, dto.ErrorDto{Error: "Could not retrieve request statistics"})
+		return
+	}
+	var ret dto.RequestStatistics
+	ret.FromModel(stats)
+
+	// Return the statistics
+	c.JSON(http.StatusOK, ret)
 }

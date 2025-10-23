@@ -1,6 +1,10 @@
 package service
 
 import (
+	"errors"
+	"sort"
+	"strings"
+	"time"
 	"treblle/app"
 	"treblle/model"
 
@@ -22,6 +26,29 @@ type ListRequestsParams struct {
 	Order  string // "asc" or "desc"
 }
 
+// PathStatistics holds the detailed statistics grouped by path
+type PathStatistics struct {
+	Path             string  `json:"path"`
+	RequestCount     int64   `json:"request_count"`
+	AverageLatencyMs float64 `json:"average_latency_ms"`
+	ClientErrorCount int64   `json:"client_error_count"`
+	ServerErrorCount int64   `json:"server_error_count"`
+}
+
+// Result struct specifically for the GORM Scan operation
+type pathStatsQueryResult struct {
+	Path             string
+	RequestCount     int64
+	AvgLatencyNanos  float64
+	ClientErrorCount int64
+	ServerErrorCount int64
+}
+
+// AllRequestStatistics holds the aggregated statistics for the requested period
+type AllRequestStatistics struct {
+	StatsPerPath []PathStatistics `json:"stats_per_path"`
+}
+
 type RequestCrudService struct {
 	db     *gorm.DB
 	logger *zap.SugaredLogger
@@ -29,6 +56,7 @@ type RequestCrudService struct {
 
 type IRequestCrudService interface {
 	List(params ListRequestsParams) ([]model.Request, int64, error)
+	GetStatistics(startTime, endTime *time.Time) (*AllRequestStatistics, error)
 }
 
 // NewRequestCRUDService is your constructor from the snippet.
@@ -113,4 +141,92 @@ func (s *RequestCrudService) List(params ListRequestsParams) ([]model.Request, i
 	}
 
 	return requests, total, nil
+}
+func (s *RequestCrudService) GetStatistics(startTime, endTime *time.Time) (*AllRequestStatistics, error) {
+	var results []pathStatsQueryResult // Use the intermediate struct for scanning
+	var allStats AllRequestStatistics
+
+	query := s.db.Model(&model.Request{})
+
+	// Apply time range filter if provided
+	if startTime != nil {
+		query = query.Where("created_at >= ?", *startTime)
+	}
+	if endTime != nil {
+		query = query.Where("created_at <= ?", *endTime)
+	}
+
+	// Select path and aggregated statistics
+	// Using SUM with CASE WHEN (or equivalent) for conditional counting
+	query = query.Select(`
+		path,
+		count(*) as request_count,
+		avg(latency) as avg_latency_nanos,
+		sum(case when response >= 400 and response < 500 then 1 else 0 end) as client_error_count,
+		sum(case when response >= 500 then 1 else 0 end) as server_error_count
+	`).Group("path").Order("request_count desc") // Order by most frequent paths first
+
+	err := query.Scan(&results).Error
+	if err != nil {
+		// Handle potential "Scan error... converting NULL to float64" specifically if needed,
+		// though with counts, this is less likely than with just AVG.
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// No records found in the time range, return empty stats
+			return &allStats, nil // Return empty, not nil error
+		}
+		s.logger.Errorf("Failed to calculate statistics per path: %v", err)
+		return nil, err
+	}
+
+	// Convert intermediate results to the final structure
+	allStats.StatsPerPath = make([]PathStatistics, len(results))
+	for i, res := range results {
+		allStats.StatsPerPath[i] = PathStatistics{
+			Path:             res.Path,
+			RequestCount:     res.RequestCount,
+			AverageLatencyMs: res.AvgLatencyNanos / float64(time.Millisecond), // Convert ns to ms
+			ClientErrorCount: res.ClientErrorCount,
+			ServerErrorCount: res.ServerErrorCount,
+		}
+	}
+
+	cleanedStatsMap := make(map[string]PathStatistics)
+	for _, pathStat := range allStats.StatsPerPath {
+		basePath, _, _ := strings.Cut(pathStat.Path, "?")
+		existing, ok := cleanedStatsMap[basePath]
+		if !ok {
+			existing = PathStatistics{Path: basePath}
+		}
+
+		// Aggregate counts
+		existing.RequestCount += pathStat.RequestCount
+		existing.ClientErrorCount += pathStat.ClientErrorCount
+		existing.ServerErrorCount += pathStat.ServerErrorCount
+
+		// Calculate weighted average for latency
+		// Avoid division by zero if RequestCount is somehow 0
+		if existing.RequestCount > 0 {
+			totalLatencyMs := (existing.AverageLatencyMs * float64(existing.RequestCount-pathStat.RequestCount)) + (pathStat.AverageLatencyMs * float64(pathStat.RequestCount))
+			existing.AverageLatencyMs = totalLatencyMs / float64(existing.RequestCount)
+		} else {
+			existing.AverageLatencyMs = 0 // Or handle as appropriate
+		}
+
+		cleanedStatsMap[basePath] = existing
+	}
+
+	// Convert map back to slice
+	cleanedSlice := make([]PathStatistics, 0, len(cleanedStatsMap))
+	for _, stat := range cleanedStatsMap {
+		cleanedSlice = append(cleanedSlice, stat)
+	}
+
+	// Optionally re-sort the cleaned slice (e.g., by RequestCount descending)
+	sort.Slice(cleanedSlice, func(i, j int) bool {
+		return cleanedSlice[i].RequestCount > cleanedSlice[j].RequestCount
+	})
+
+	allStats.StatsPerPath = cleanedSlice // Replace original slice with cleaned one
+
+	return &allStats, nil
 }
