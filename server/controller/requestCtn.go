@@ -40,7 +40,7 @@ func (cnt *RequestCtn) RegisterEndpoints(router *gin.RouterGroup) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			search		query		string	false	"Search term for request path"
-//	@Param			method		query		string	false	"Filter by HTTP method (e.Example, GET, POST)"	enums(GET, POST, PUT, DELETE, PATCH)
+//	@Param			method		query		string	false	"Filter by HTTP method (e.Example, GET, POST)"	enums(GET, POST, PUT, DELETE, PATCH, HEAD, OPTION, TRACE,CONNECT)
 //	@Param			response	query		int		false	"Filter by response status code (e.Example, 200, 404)"
 //	@Param			limit		query		int		false	"Pagination limit"	default(20)
 //	@Param			offset		query		int		false	"Pagination offset"
@@ -54,7 +54,7 @@ func (cnt *RequestCtn) ListRequests(c *gin.Context) {
 	var q dto.ListQuery
 	if err := c.ShouldBindQuery(&q); err != nil {
 		cnt.logger.Errorf("Failed to bind query params: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters: " + err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorDto{Error: "Invalid query parameters: " + err.Error()})
 		return
 	}
 
@@ -88,17 +88,21 @@ func (cnt *RequestCtn) ListRequests(c *gin.Context) {
 		params.Response = &q.Response
 	}
 
-	// --- 4. Call the service ---
 	requests, total, err := cnt.crudSrv.List(params)
 	if err != nil {
 		cnt.logger.Errorf("Service failed to list requests: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve requests"})
+		c.JSON(http.StatusInternalServerError, dto.ErrorDto{Error: "Could not retrieve requests"})
 		return
+	}
+
+	var reqDto = make([]dto.RequestsDto, len(requests))
+	for i := range reqDto {
+		reqDto[i].FromModel(requests[i])
 	}
 
 	// --- 5. Return a structured JSON response ---
 	c.JSON(http.StatusOK, dto.ResDataDto{
-		Data: requests,
+		Data: reqDto,
 		Pagination: dto.Pagination{
 			Total:  total,
 			Limit:  q.Limit,

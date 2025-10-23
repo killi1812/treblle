@@ -69,9 +69,30 @@ definitions:
       total:
         type: integer
     type: object
+  dto.RequestsDto:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: integer
+      latency:
+        description: Latency in Milliseconds
+        type: integer
+      method:
+        type: string
+      path:
+        type: string
+      response:
+        type: integer
+      responseTime:
+        type: string
+    type: object
   dto.ResDataDto:
     properties:
-      data: {}
+      data:
+        items:
+          $ref: '#/definitions/dto.RequestsDto'
+        type: array
       pagination:
         $ref: '#/definitions/dto.Pagination'
     type: object
@@ -91,8 +112,6 @@ definitions:
       lastName:
         type: string
       oib:
-        type: string
-      policeToken:
         type: string
       residence:
         type: string
@@ -183,6 +202,10 @@ paths:
         - PUT
         - DELETE
         - PATCH
+        - HEAD
+        - OPTION
+        - TRACE
+        - CONNECT
         in: query
         name: method
         type: string

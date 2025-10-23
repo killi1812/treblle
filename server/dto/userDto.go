@@ -2,25 +2,24 @@ package dto
 
 import (
 	"fmt"
+	"time"
 	"treblle/model"
 	"treblle/util/cerror"
 	"treblle/util/format"
-	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 type UserDto struct {
-	Uuid        string `json:"uuid"`
-	FirstName   string `json:"firstName"`
-	LastName    string `json:"lastName"`
-	OIB         string `json:"oib"`
-	Residence   string `json:"residence"`
-	BirthDate   string `json:"birthDate"`
-	Email       string `json:"email"`
-	Role        string `json:"role"`
-	PoliceToken string `json:"policeToken"`
+	Uuid      string `json:"uuid"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	OIB       string `json:"oib"`
+	Residence string `json:"residence"`
+	BirthDate string `json:"birthDate"`
+	Email     string `json:"email"`
+	Role      string `json:"role"`
 }
 
 func (dto UserDto) ToModel() (*model.User, error) {

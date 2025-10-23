@@ -54,7 +54,8 @@ func (r *RequestService) LogResponse(id uint, resp *http.Response) (*model.Reque
 
 	request.ResponseTime = time.Now()
 	request.Response = resp.StatusCode
-	zap.S().Debugf("req latency is: %v ", time.Since(request.CreatedAt))
+	request.Latency = request.ResponseTime.Sub(request.CreatedAt)
+	zap.S().Debugf("req latency is: %v ", request.Latency.Milliseconds())
 
 	if rez := r.db.Save(&request); rez.Error != nil {
 		r.logger.Errorf("Failed logging request, error = %v", rez.Error)

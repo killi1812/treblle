@@ -135,7 +135,11 @@ const docTemplate = `{
                             "POST",
                             "PUT",
                             "DELETE",
-                            "PATCH"
+                            "PATCH",
+                            "HEAD",
+                            "OPTION",
+                            "TRACE",
+                            "CONNECT"
                         ],
                         "type": "string",
                         "description": "Filter by HTTP method (e.Example, GET, POST)",
@@ -614,10 +618,42 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.RequestsDto": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "latency": {
+                    "description": "Latency in Milliseconds",
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "response": {
+                    "type": "integer"
+                },
+                "responseTime": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ResDataDto": {
             "type": "object",
             "properties": {
-                "data": {},
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.RequestsDto"
+                    }
+                },
                 "pagination": {
                     "$ref": "#/definitions/dto.Pagination"
                 }
@@ -647,9 +683,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "oib": {
-                    "type": "string"
-                },
-                "policeToken": {
                     "type": "string"
                 },
                 "residence": {
