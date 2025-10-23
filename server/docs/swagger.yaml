@@ -4,62 +4,6 @@ definitions:
       error:
         type: string
     type: object
-  dto.LoginDto:
-    properties:
-      email:
-        type: string
-      password:
-        minLength: 6
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  dto.NewUserDto:
-    properties:
-      birthDate:
-        type: string
-      email:
-        type: string
-      firstName:
-        maxLength: 100
-        minLength: 2
-        type: string
-      lastName:
-        maxLength: 100
-        minLength: 2
-        type: string
-      oib:
-        type: string
-      password:
-        minLength: 6
-        type: string
-      residence:
-        maxLength: 255
-        type: string
-      role:
-        enum:
-        - admin
-        - user
-        - superadmin
-        type: string
-      username:
-        maxLength: 100
-        minLength: 2
-        type: string
-      uuid:
-        type: string
-    required:
-    - birthDate
-    - email
-    - firstName
-    - lastName
-    - oib
-    - password
-    - residence
-    - role
-    - username
-    type: object
   dto.Pagination:
     properties:
       limit:
@@ -96,91 +40,30 @@ definitions:
       pagination:
         $ref: '#/definitions/dto.Pagination'
     type: object
-  dto.TokenDto:
+  dto.ServerInfoDto:
     properties:
-      accessToken:
+      build:
         type: string
-    type: object
-  dto.UserDto:
-    properties:
-      birthDate:
+      buildTimestamp:
         type: string
-      email:
+      commitHash:
         type: string
-      firstName:
-        type: string
-      lastName:
-        type: string
-      oib:
-        type: string
-      residence:
-        type: string
-      role:
-        type: string
-      uuid:
+      version:
         type: string
     type: object
 info:
   contact: {}
 paths:
-  /auth/login:
-    post:
-      consumes:
-      - application/json
-      description: Authenticates a user and returns access and refresh tokens
-      parameters:
-      - description: Login credentials
-        in: body
-        name: loginDto
-        required: true
-        schema:
-          $ref: '#/definitions/dto.LoginDto'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.TokenDto'
-      summary: User login
-      tags:
-      - auth
-  /auth/logout:
-    post:
-      description: Generates a new access token using a valid refresh token
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.TokenDto'
-      summary: Refresh Access Token
-      tags:
-      - auth
-  /auth/refresh:
-    post:
-      description: Generates a new access token using a valid refresh token
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.TokenDto'
-      summary: Refresh Access Token
-      tags:
-      - auth
   /info:
     get:
       description: return information about the server build, version, etc ...
       produces:
-      - image/png
+      - application/json
       responses:
         "200":
           description: Information about server
           schema:
-            type: struct
+            $ref: '#/definitions/dto.ServerInfoDto'
       summary: Get server info
       tags:
       - info
@@ -254,209 +137,4 @@ paths:
       summary: List API requests
       tags:
       - Requests
-  /user:
-    post:
-      parameters:
-      - description: Data for new user
-        in: body
-        name: model
-        required: true
-        schema:
-          $ref: '#/definitions/dto.NewUserDto'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/dto.UserDto'
-        "400":
-          description: Bad Request
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: Create new user
-      tags:
-      - user
-  /user/{uuid}:
-    delete:
-      description: delete a user with uuid
-      parameters:
-      - description: user uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: delete user with uuid
-      tags:
-      - user
-    get:
-      description: get a user with uuid
-      parameters:
-      - description: user uuid
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserDto'
-        "400":
-          description: Bad Request
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: get user with uuid
-      tags:
-      - user
-    put:
-      parameters:
-      - description: uuid of user to be updated
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: Data for updating user
-        in: body
-        name: model
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UserDto'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserDto'
-        "400":
-          description: Bad Request
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: Update user with new dat
-      tags:
-      - user
-  /user/all-users:
-    get:
-      description: Fetches all users for superadmin
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dto.UserDto'
-            type: array
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "500":
-          description: Internal Server Error
-      summary: Get all users for superadmin
-      tags:
-      - user
-  /user/my-data:
-    get:
-      description: Fetches the currently logged-in user's data based on the JWT token
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserDto'
-        "400":
-          description: Bad Request
-        "401":
-          description: Unauthorized
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: Get logged-in user data
-      tags:
-      - user
-  /user/oib/{oib}:
-    get:
-      description: get a user with oib
-      parameters:
-      - description: user oib
-        in: path
-        name: oib
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UserDto'
-        "400":
-          description: Bad Request
-        "404":
-          description: Not Found
-        "500":
-          description: Internal Server Error
-      summary: get user with oib
-      tags:
-      - user
-  /user/search:
-    get:
-      description: Performs a fuzzy search for users by first name, last name, or
-        full name with similarity matching
-      parameters:
-      - description: Search query
-        in: query
-        name: query
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/dto.UserDto'
-            type: array
-        "400":
-          description: Bad Request
-        "500":
-          description: Internal Server Error
-      summary: Search users by name
-      tags:
-      - user
-  /ws/lobby/{userId}/{clientId}:
-    get:
-      description: Web socket for lobby providing data for players
-      produces:
-      - application/json
-      responses:
-        "500":
-          description: Internal Server Error
-      summary: web socket for lobby
-      tags:
-      - lobby
 swagger: "2.0"

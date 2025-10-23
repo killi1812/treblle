@@ -10,16 +10,16 @@ import (
 	"gorm.io/gorm"
 )
 
-type RequestService struct {
+type ReqLogger struct {
 	db     *gorm.DB
 	logger *zap.SugaredLogger
 }
 
 func NewRequestService() app.RequestLogger {
-	var service *RequestService
+	var service *ReqLogger
 
 	app.Invoke(func(db *gorm.DB, logger *zap.SugaredLogger) {
-		service = &RequestService{
+		service = &ReqLogger{
 			db:     db,
 			logger: logger,
 		}
@@ -28,7 +28,7 @@ func NewRequestService() app.RequestLogger {
 	return service
 }
 
-func (r *RequestService) LogRequest(req *http.Request) (*model.Request, error) {
+func (r *ReqLogger) LogRequest(req *http.Request) (*model.Request, error) {
 	var request model.Request
 	if err := request.FromRequest(req); err != nil {
 		r.logger.Errorf("Failed logging request, error = %v", err)
@@ -44,7 +44,7 @@ func (r *RequestService) LogRequest(req *http.Request) (*model.Request, error) {
 	return &request, nil
 }
 
-func (r *RequestService) LogResponse(id uint, resp *http.Response) (*model.Request, error) {
+func (r *ReqLogger) LogResponse(id uint, resp *http.Response) (*model.Request, error) {
 	var request model.Request
 
 	if rez := r.db.First(&request, id); rez.Error != nil {
