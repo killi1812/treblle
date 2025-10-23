@@ -68,17 +68,26 @@ func (cnt *RequestCtn) ListRequests(c *gin.Context) {
 		q.Offset = 0
 	}
 
+	// TODO: add sart and end date
 	params := service.ListRequestsParams{
 		Limit:  q.Limit,
 		Offset: q.Offset,
-		SortBy: q.SortBy,
 		Order:  q.Order,
 	}
 
-	// Use pointers for optional filters
 	if q.Search != "" {
 		params.Search = &q.Search
 	}
+
+	switch q.SortBy {
+	case "createdAt":
+		params.SortBy = "created_at"
+	case "responseTime":
+		params.SortBy = "response_time"
+	default:
+		params.SortBy = q.SortBy
+	}
+
 	if q.Method != "" {
 		params.Method = &q.Method
 	}

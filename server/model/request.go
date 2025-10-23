@@ -19,6 +19,7 @@ type Request struct {
 
 func (r *Request) FromRequest(req *http.Request) error {
 	r.Method = req.Method
+	// BUG: fiter the path so it desn't contain proxy/
 	r.Path = req.URL.Path
 	r.CreatedAt = time.Now()
 

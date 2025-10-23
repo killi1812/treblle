@@ -23,11 +23,11 @@ type PathStatistics struct {
 // It receives a pointer to modify the DTO instance directly.
 func (dto *RequestStatistics) FromModel(stats *service.AllRequestStatistics) {
 	if stats == nil || stats.StatsPerPath == nil {
-		dto.RequestsPerPath = []PathStatistics{} // Ensure it's an empty slice, not nil
+		// Ensure it's an empty slice, not nil
+		dto.RequestsPerPath = []PathStatistics{}
 		return
 	}
 	var sum float64
-	var count int
 
 	dto.RequestsPerPath = make([]PathStatistics, len(stats.StatsPerPath))
 	for i, serviceStat := range stats.StatsPerPath {
@@ -35,8 +35,7 @@ func (dto *RequestStatistics) FromModel(stats *service.AllRequestStatistics) {
 		dto.ClientErrorCount += serviceStat.ClientErrorCount
 		dto.ServerErrorCount += serviceStat.ServerErrorCount
 		dto.RequestCount += serviceStat.RequestCount
-		sum += serviceStat.AverageLatencyMs
-		count++
+		sum += serviceStat.AverageLatencyMs * float64(serviceStat.RequestCount)
 
 		dto.RequestsPerPath[i] = PathStatistics{
 			Path:             serviceStat.Path,
@@ -46,5 +45,5 @@ func (dto *RequestStatistics) FromModel(stats *service.AllRequestStatistics) {
 			ServerErrorCount: serviceStat.ServerErrorCount,
 		}
 	}
-	dto.AverageLatencyMs = sum / float64(count)
+	dto.AverageLatencyMs = sum / float64(dto.RequestCount)
 }
