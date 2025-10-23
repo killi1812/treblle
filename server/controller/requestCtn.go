@@ -6,6 +6,7 @@ import (
 	"treblle/app"
 	"treblle/dto"
 	"treblle/service"
+	"treblle/util/ws"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -14,6 +15,7 @@ import (
 type RequestCtn struct {
 	Logger  *zap.SugaredLogger
 	CrudSrv service.IRequestCrudService
+	Hub     *ws.Hub
 }
 
 // NewRequestCtn crates new controller with its sependencies
@@ -31,7 +33,8 @@ func NewRequestCtn() app.Controller {
 // RegisterEndpoints registers the image manipulation endpoints.
 func (cnt *RequestCtn) RegisterEndpoints(router *gin.RouterGroup) {
 	router.GET("/requests", cnt.ListRequests)
-	router.GET("/requests/statistics", cnt.GetRequestStatistics) // Register the new endpoint
+	router.GET("/requests/statistics", cnt.GetRequestStatistics)
+	router.GET("/requests/statistics/ws", cnt.serveChartWs)
 }
 
 // ListRequests godoc
@@ -180,4 +183,27 @@ func (cnt *RequestCtn) GetRequestStatistics(c *gin.Context) {
 
 	// Return the statistics
 	c.JSON(http.StatusOK, ret)
+}
+
+// serveChartWs godoc
+//
+//	@Summary		web socket for streaming chart data
+//	@Description	Web socket
+//	@Tags			chart
+//	@Produce		json
+//	@Failure		500
+//	@Router			/requests/statistics/ws [get]
+func (cnt *RequestCtn) serveChartWs(c *gin.Context) {
+	conn, err := ws.Upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		cnt.Logger.Errorf("Failed to upgrade connection: %v", err)
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	// crate new lobby
+	cnt.Hub = &service.NewLobby().Hub
+
+	// if lobby exists add new connection
+	ws.NewClient(cnt.Hub, conn)
 }

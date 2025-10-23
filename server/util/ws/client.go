@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 )
@@ -25,8 +26,8 @@ const (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	UserId string      // UserId is the id of the user whouse client
-	Send   chan []byte // Send is a chennel for sending data
+	Uuid uuid.UUID
+	Send chan []byte // Send is a chennel for sending data
 
 	hub       *Hub
 	conn      *websocket.Conn
@@ -46,9 +47,9 @@ var Upgrader = websocket.Upgrader{
 }
 
 // NewClient Registers new client to hub
-func NewClient(hub *Hub, conn *websocket.Conn, userId string, unregFunc UnregisterFunc) error {
+func NewClient(hub *Hub, conn *websocket.Conn) error {
 	zap.S().Debugf("Registering new client to hub %s", hub.hubId)
-	client := &Client{UserId: userId, hub: hub, conn: conn, Send: make(chan []byte, 256), unregFunc: unregFunc}
+	client := &Client{Uuid: uuid.New(), hub: hub, conn: conn, Send: make(chan []byte, 256)}
 	client.hub.register <- client
 
 	go client.writePump()
@@ -79,7 +80,7 @@ func (c *Client) readPump() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
 				zap.S().Errorf("Error reading message, error: %w", err)
 			} else {
-				zap.S().Infof("Closing the connection with id: %d", c.UserId)
+				zap.S().Infof("Closing the connection with id: %d", c.Uuid)
 			}
 			break
 		}

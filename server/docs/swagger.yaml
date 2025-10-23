@@ -25,6 +25,8 @@ definitions:
         type: integer
       server_error_count:
         type: integer
+      timestamp:
+        type: string
     type: object
   dto.RequestStatistics:
     properties:
@@ -40,6 +42,8 @@ definitions:
         type: array
       server_error_count:
         type: integer
+      timestamp:
+        type: string
     type: object
   dto.RequestsDto:
     properties:
@@ -201,4 +205,15 @@ paths:
       summary: Get request statistics
       tags:
       - Requests
+  /requests/statistics/ws:
+    get:
+      description: Web socket
+      produces:
+      - application/json
+      responses:
+        "500":
+          description: Internal Server Error
+      summary: web socket for streaming chart data
+      tags:
+      - chart
 swagger: "2.0"

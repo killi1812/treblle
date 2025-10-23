@@ -21,12 +21,12 @@ type MsgHandler interface {
 // Hub maintains the set of active clients and broadcasts messages to them.
 type Hub struct {
 	hubId      uuid.UUID
-	register   chan *Client       // register used for creating new clients
-	unregister chan *Client       // unregister unregisters the clinet
-	Clients    map[string]*Client //  clients is a map of registered clients unser userId keys
-	Broadcast  chan []byte        // broadcast is a message for all clients
-	Mutex      sync.Mutex         // mutex for locking game logic
-	Handler    MsgHandler         // handler handles incoming messages
+	register   chan *Client          // register used for creating new clients
+	unregister chan *Client          // unregister unregisters the clinet
+	Clients    map[uuid.UUID]*Client //  clients is a map of registered clients unser userId keys
+	Broadcast  chan []byte           // broadcast is a message for all clients
+	Mutex      sync.Mutex            // mutex for locking game logic
+	Handler    MsgHandler            // handler handles incoming messages
 }
 
 func (hub *Hub) isEmpty() bool {
@@ -40,7 +40,7 @@ func NewHub() Hub {
 	zap.S().Infof("Creating new hub with id %s", hubId)
 	return Hub{
 		hubId:      hubId,
-		Clients:    make(map[string]*Client),
+		Clients:    make(map[uuid.UUID]*Client),
 		Broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -55,12 +55,12 @@ func (hub *Hub) Run() {
 		case client := <-hub.register:
 			zap.S().Infof("Registering new client to hub: %s", hub.hubId)
 
-			hub.Clients[client.UserId] = client
+			hub.Clients[client.Uuid] = client
 			hub.Handler.Update(client)
 
 		case client := <-hub.unregister:
-			if _, ok := hub.Clients[client.UserId]; ok {
-				delete(hub.Clients, client.UserId)
+			if _, ok := hub.Clients[client.Uuid]; ok {
+				delete(hub.Clients, client.Uuid)
 				close(client.Send)
 			}
 

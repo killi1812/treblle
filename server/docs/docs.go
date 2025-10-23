@@ -185,6 +185,23 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/requests/statistics/ws": {
+            "get": {
+                "description": "Web socket",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chart"
+                ],
+                "summary": "web socket for streaming chart data",
+                "responses": {
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -227,6 +244,9 @@ const docTemplate = `{
                 },
                 "server_error_count": {
                     "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
                 }
             }
         },
@@ -250,6 +270,9 @@ const docTemplate = `{
                 },
                 "server_error_count": {
                     "type": "integer"
+                },
+                "timestamp": {
+                    "type": "string"
                 }
             }
         },

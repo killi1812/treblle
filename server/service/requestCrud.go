@@ -26,15 +26,6 @@ type ListRequestsParams struct {
 	Order  string // "asc" or "desc"
 }
 
-// PathStatistics holds the detailed statistics grouped by path
-type PathStatistics struct {
-	Path             string  `json:"path"`
-	RequestCount     int64   `json:"request_count"`
-	AverageLatencyMs float64 `json:"average_latency_ms"`
-	ClientErrorCount int64   `json:"client_error_count"`
-	ServerErrorCount int64   `json:"server_error_count"`
-}
-
 // Result struct specifically for the GORM Scan operation
 type pathStatsQueryResult struct {
 	Path             string
@@ -44,11 +35,6 @@ type pathStatsQueryResult struct {
 	ServerErrorCount int64
 }
 
-// AllRequestStatistics holds the aggregated statistics for the requested period
-type AllRequestStatistics struct {
-	StatsPerPath []PathStatistics `json:"stats_per_path"`
-}
-
 type RequestCrudService struct {
 	db     *gorm.DB
 	logger *zap.SugaredLogger
@@ -56,7 +42,7 @@ type RequestCrudService struct {
 
 type IRequestCrudService interface {
 	List(params ListRequestsParams) ([]model.Request, int64, error)
-	GetStatistics(startTime, endTime *time.Time) (*AllRequestStatistics, error)
+	GetStatistics(startTime, endTime *time.Time) (*model.AllRequestStatistics, error)
 }
 
 // NewRequestCRUDService is your constructor from the snippet.
@@ -142,9 +128,9 @@ func (s *RequestCrudService) List(params ListRequestsParams) ([]model.Request, i
 
 	return requests, total, nil
 }
-func (s *RequestCrudService) GetStatistics(startTime, endTime *time.Time) (*AllRequestStatistics, error) {
+func (s *RequestCrudService) GetStatistics(startTime, endTime *time.Time) (*model.AllRequestStatistics, error) {
 	var results []pathStatsQueryResult // Use the intermediate struct for scanning
-	var allStats AllRequestStatistics
+	var allStats model.AllRequestStatistics
 
 	query := s.db.Model(&model.Request{})
 
@@ -179,9 +165,9 @@ func (s *RequestCrudService) GetStatistics(startTime, endTime *time.Time) (*AllR
 	}
 
 	// Convert intermediate results to the final structure
-	allStats.StatsPerPath = make([]PathStatistics, len(results))
+	allStats.StatsPerPath = make([]model.PathStatistics, len(results))
 	for i, res := range results {
-		allStats.StatsPerPath[i] = PathStatistics{
+		allStats.StatsPerPath[i] = model.PathStatistics{
 			Path:             res.Path,
 			RequestCount:     res.RequestCount,
 			AverageLatencyMs: res.AvgLatencyNanos / float64(time.Millisecond), // Convert ns to ms
@@ -190,12 +176,12 @@ func (s *RequestCrudService) GetStatistics(startTime, endTime *time.Time) (*AllR
 		}
 	}
 
-	cleanedStatsMap := make(map[string]PathStatistics)
+	cleanedStatsMap := make(map[string]model.PathStatistics)
 	for _, pathStat := range allStats.StatsPerPath {
 		basePath, _, _ := strings.Cut(pathStat.Path, "?")
 		existing, ok := cleanedStatsMap[basePath]
 		if !ok {
-			existing = PathStatistics{Path: basePath}
+			existing = model.PathStatistics{Path: basePath}
 		}
 
 		// Aggregate counts
@@ -209,14 +195,14 @@ func (s *RequestCrudService) GetStatistics(startTime, endTime *time.Time) (*AllR
 			totalLatencyMs := (existing.AverageLatencyMs * float64(existing.RequestCount-pathStat.RequestCount)) + (pathStat.AverageLatencyMs * float64(pathStat.RequestCount))
 			existing.AverageLatencyMs = totalLatencyMs / float64(existing.RequestCount)
 		} else {
-			existing.AverageLatencyMs = 0 // Or handle as appropriate
+			existing.AverageLatencyMs = 0
 		}
 
 		cleanedStatsMap[basePath] = existing
 	}
 
 	// Convert map back to slice
-	cleanedSlice := make([]PathStatistics, 0, len(cleanedStatsMap))
+	cleanedSlice := make([]model.PathStatistics, 0, len(cleanedStatsMap))
 	for _, stat := range cleanedStatsMap {
 		cleanedSlice = append(cleanedSlice, stat)
 	}
@@ -227,6 +213,5 @@ func (s *RequestCrudService) GetStatistics(startTime, endTime *time.Time) (*AllR
 	})
 
 	allStats.StatsPerPath = cleanedSlice // Replace original slice with cleaned one
-
 	return &allStats, nil
 }

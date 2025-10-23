@@ -38,12 +38,12 @@ func (m *MockRequestCrudService) List(params service.ListRequestsParams) ([]mode
 	return requests, args.Get(1).(int64), args.Error(2)
 }
 
-func (m *MockRequestCrudService) GetStatistics(start, end *time.Time) (*service.AllRequestStatistics, error) {
+func (m *MockRequestCrudService) GetStatistics(start, end *time.Time) (*model.AllRequestStatistics, error) {
 	args := m.Called(start, end)
 	// Handle potential nil return for the slice
-	var requests service.AllRequestStatistics
+	var requests model.AllRequestStatistics
 	if args.Get(0) != nil {
-		requests = args.Get(0).(service.AllRequestStatistics)
+		requests = args.Get(0).(model.AllRequestStatistics)
 	}
 	return &requests, args.Error(1)
 }
