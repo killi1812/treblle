@@ -20,8 +20,8 @@ type RequestLogger interface {
 }
 
 func Proxy(router *gin.RouterGroup) {
-	const targetAPI = "https://www.thecocktaildb.com"
-	target, err := url.Parse(targetAPI)
+	// TODO: move to env var
+	target, err := url.Parse(ProxyUrl)
 	if err != nil {
 		zap.S().Fatalf("Failed to parse target URL: %v", err)
 	}

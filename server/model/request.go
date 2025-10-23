@@ -2,6 +2,7 @@ package model
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -19,8 +20,7 @@ type Request struct {
 
 func (r *Request) FromRequest(req *http.Request) error {
 	r.Method = req.Method
-	// BUG: fiter the path so it desn't contain proxy/
-	r.Path = req.URL.Path
+	r.Path = strings.TrimPrefix(req.URL.Path, "/proxy")
 	r.CreatedAt = time.Now()
 
 	zap.S().Debugf("Populating request data, rez %+v", *r)

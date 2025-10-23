@@ -24,6 +24,7 @@ func LoadConfig() {
 	// Database
 	DbConn = loadString("DB_CONN")
 	MongoConn = loadString("MONGO_CONN")
+	ProxyUrl = loadString("PROXY_URL")
 
 	zap.S().Debugf("Finished loading env variables")
 }

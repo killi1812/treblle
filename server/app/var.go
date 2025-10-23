@@ -24,4 +24,5 @@ var (
 	Port      int    // Port is app port
 	DbConn    string // Postgress Connection string
 	MongoConn string // MongoConn is mongo db connection string
+	ProxyUrl  string // ProxyUrl is the url to api
 )
