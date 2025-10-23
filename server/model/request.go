@@ -8,9 +8,10 @@ import (
 )
 
 type Request struct {
-	ID           uint   `gorm:"primarykey"`
-	Method       string `gorm:"type:varchar(5);not null"`
-	Response     string `gorm:"type:text;null"`
+	ID     uint   `gorm:"primarykey"`
+	Method string `gorm:"type:varchar(5);not null"`
+	//Response     string `gorm:"type:text;null"`
+	Response     int    `gorm:"type:int;null"`
 	Path         string `gorm:"type:varchar(150);not null"`
 	ResponseTime time.Time
 	CreatedAt    time.Time `gorm:"not null"`

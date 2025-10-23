@@ -1,0 +1,9 @@
+
+@host = http://localhost
+@port = 8090
+
+# List API requests with a limit
+GET {{host}}:{{port}}/api/requests?limit=20 HTTP/1.1
+accept: application/json
+
+###

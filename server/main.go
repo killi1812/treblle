@@ -17,7 +17,10 @@ func main() {
 	app.Provide(zap.S)
 
 	app.Provide(service.NewRequestService)
+	app.Provide(service.NewRequestCrudService)
+
 	app.RegisterController(controller.NewInfoCnt)
+	app.RegisterController(controller.NewRequestCtn)
 
 	app.Start()
 }

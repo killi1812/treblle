@@ -1,4 +1,9 @@
 definitions:
+  dto.ErrorDto:
+    properties:
+      error:
+        type: string
+    type: object
   dto.LoginDto:
     properties:
       email:
@@ -54,6 +59,21 @@ definitions:
     - residence
     - role
     - username
+    type: object
+  dto.Pagination:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
+  dto.ResDataDto:
+    properties:
+      data: {}
+      pagination:
+        $ref: '#/definitions/dto.Pagination'
     type: object
   dto.TokenDto:
     properties:
@@ -145,6 +165,72 @@ paths:
       summary: Get server info
       tags:
       - info
+  /requests:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of recorded API requests, with filtering and
+        sorting.
+      parameters:
+      - description: Search term for request path
+        in: query
+        name: search
+        type: string
+      - description: Filter by HTTP method (e.Example, GET, POST)
+        enum:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        in: query
+        name: method
+        type: string
+      - description: Filter by response status code (e.Example, 200, 404)
+        in: query
+        name: response
+        type: integer
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      - description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      - description: Sort by field (created_at or response_time)
+        enum:
+        - created_at
+        - response_time
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order (asc or desc)
+        enum:
+        - asc
+        - desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ResDataDto'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorDto'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorDto'
+      summary: List API requests
+      tags:
+      - Requests
   /user:
     post:
       parameters:

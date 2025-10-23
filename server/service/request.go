@@ -5,7 +5,6 @@ import (
 	"time"
 	"treblle/app"
 	"treblle/model"
-	"treblle/util/read"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -54,12 +53,7 @@ func (r *RequestService) LogResponse(id uint, resp *http.Response) (*model.Reque
 	}
 
 	request.ResponseTime = time.Now()
-	data, err := read.ReadBody(resp)
-	if err != nil {
-		zap.S().Errorf("Error reading response, error = %v", err)
-		return nil, nil
-	}
-	request.Response = string(data)
+	request.Response = resp.StatusCode
 	zap.S().Debugf("req latency is: %v ", time.Since(request.CreatedAt))
 
 	if rez := r.db.Save(&request); rez.Error != nil {
