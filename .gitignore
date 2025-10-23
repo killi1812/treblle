@@ -40,3 +40,5 @@ build
 
 # test results
 coverage.out
+
+client/

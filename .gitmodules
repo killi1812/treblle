@@ -1,0 +1,3 @@
+[submodule "client"]
+	path = client
+	url = git@github.com:killi1812/treblle-front.git
