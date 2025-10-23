@@ -21,17 +21,7 @@ var (
 // Envirment variables
 
 var (
-	Port       int    // Port is app port
-	DbConn     string // Postgress Connection string
-	AccessKey  string // AccessKey is secrete for jwt access key
-	RefreshKey string // RefreshKey is secrete for jwt refresh key
-	MongoConn  string // MongoConn is mongo db connection string
-)
-
-// MinIO connection configuration
-var (
-	MIOEndpoint        string
-	MIOAccessKeyID     string
-	MIOSecretAccessKey string
-	MIOUseSSL          bool
+	Port      int    // Port is app port
+	DbConn    string // Postgress Connection string
+	MongoConn string // MongoConn is mongo db connection string
 )

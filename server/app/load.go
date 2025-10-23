@@ -21,19 +21,9 @@ func LoadConfig() {
 	// App config
 	Port = loadInt("PORT")
 
-	// Secrets
-	AccessKey = loadString("ACCESS_KEY")
-	RefreshKey = loadString("REFRESH_KEY")
-
 	// Database
 	DbConn = loadString("DB_CONN")
 	MongoConn = loadString("MONGO_CONN")
-
-	// Minio
-	MIOEndpoint = loadString("MINIO_ENDPOINT")
-	MIOAccessKeyID = loadString("MINIO_ACCESS_KEY_ID")
-	MIOSecretAccessKey = loadString("MINIO_SECRET_ACCESS_KEY")
-	MIOUseSSL = loadBool("MINIO_USE_SSL")
 
 	zap.S().Debugf("Finished loading env variables")
 }
