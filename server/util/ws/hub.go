@@ -48,7 +48,7 @@ func NewHub() Hub {
 }
 
 // Run starts the hub's event loop.
-func (hub *Hub) Run() {
+func (hub *Hub) Run(closeFunc func()) {
 	zap.S().Infof("Running event loop for hub: %s", hub.hubId)
 	for {
 		select {
@@ -59,9 +59,14 @@ func (hub *Hub) Run() {
 			hub.Handler.Update(client)
 
 		case client := <-hub.unregister:
+			zap.S().Infof("unregistering client")
 			if _, ok := hub.Clients[client.Uuid]; ok {
 				delete(hub.Clients, client.Uuid)
 				close(client.Send)
+				if len(hub.Clients) == 0 {
+					zap.S().Infof("Closing conection")
+					closeFunc()
+				}
 			}
 
 		case message := <-hub.Broadcast:

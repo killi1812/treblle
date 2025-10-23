@@ -30,13 +30,14 @@ type Lobby struct {
 
 // NewLobby creates a new lobby and runs its event loop
 func NewLobby() *Lobby {
+	now := time.Now()
 	var lobby = Lobby{
 		Hub:                ws.NewHub(),
 		requestCrudService: NewRequestCrudService(),
+		LastUpdate:         &now,
 	}
-	lobby.Hub.Handler = &lobby
-	go lobby.Hub.Run()
 
+	lobby.Hub.Handler = &lobby
 	actionFunc := func() {
 		var state dto.RequestStatistics
 		now := time.Now()
@@ -48,7 +49,7 @@ func NewLobby() *Lobby {
 		state.FromModel(data)
 		lobby.LastUpdate = &now
 
-		updatedState, err := json.Marshal(&state)
+		updatedState, err := json.Marshal(state)
 		if err != nil {
 			zap.S().Errorf("Faled to marshal state, state %+v ,err = %w", state, err)
 		}
@@ -56,6 +57,7 @@ func NewLobby() *Lobby {
 		lobby.Hub.Broadcast <- updatedState
 	}
 	task := NewPeriodicTask(actionFunc, 2*time.Second)
+	go lobby.Hub.Run(task.Stop)
 	task.Start()
 	lobby.task = task
 	return &lobby
@@ -92,7 +94,7 @@ func (lobby *Lobby) HandleMsg(data []byte) {
 	}
 
 	// Broadcast the updated state
-	updatedState, err := json.Marshal(&state)
+	updatedState, err := json.Marshal(state)
 	if err != nil {
 		zap.S().Errorf("Faled to marshal state, err = %w", err)
 	}
@@ -105,7 +107,7 @@ func (lobby *Lobby) HandleMsg(data []byte) {
 func (lobby *Lobby) Update(client *ws.Client) {
 	// Broadcast the updated state
 	var state dto.RequestStatistics
-	updatedState, err := json.Marshal(&state)
+	updatedState, err := json.Marshal(state)
 	if err != nil {
 		zap.S().Errorf("Faled to marshal state, err = %w", err)
 	}

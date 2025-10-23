@@ -11,7 +11,7 @@ type RequestStatistics struct {
 	ClientErrorCount int64            `json:"client_error_count"`
 	ServerErrorCount int64            `json:"server_error_count"`
 	RequestsPerPath  []PathStatistics `json:"requests_per_path"`
-	Timestamp        string           `json:"timestamp,omitempty"`
+	Timestamp        int64            `json:"timestamp,omitempty"`
 }
 
 // PathStatistics holds the detailed statistics grouped by path
@@ -21,7 +21,7 @@ type PathStatistics struct {
 	AverageLatencyMs float64 `json:"average_latency_ms"`
 	ClientErrorCount int64   `json:"client_error_count"`
 	ServerErrorCount int64   `json:"server_error_count"`
-	Timestamp        string  `json:"timestamp,omitempty"`
+	Timestamp        int64   `json:"timestamp,omitempty"`
 }
 
 // FromModel populates the RequestStatistics DTO from the service's AllRequestStatistics struct.
@@ -49,11 +49,11 @@ func (dto *RequestStatistics) FromModel(stats *model.AllRequestStatistics) {
 			AverageLatencyMs: serviceStat.AverageLatencyMs, // Already in ms from the service
 			ClientErrorCount: serviceStat.ClientErrorCount,
 			ServerErrorCount: serviceStat.ServerErrorCount,
-			Timestamp:        now.String(),
+			Timestamp:        now.UnixMilli(),
 		}
 	}
 	if len(stats.StatsPerPath) != 0 {
 		dto.AverageLatencyMs = sum / float64(dto.RequestCount)
 	}
-	dto.Timestamp = now.String()
+	dto.Timestamp = now.UnixMilli()
 }
