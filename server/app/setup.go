@@ -3,8 +3,8 @@ package app
 
 import (
 	"fmt"
-	"treblle/model"
 	"time"
+	"treblle/model"
 
 	"go.uber.org/dig"
 	"go.uber.org/zap"
