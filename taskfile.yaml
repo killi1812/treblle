@@ -189,7 +189,6 @@ tasks:
       - cmd: go install github.com/air-verse/air@latest
       - cmd: go install github.com/swaggo/swag/cmd/swag@latest
     silent: false
-    internal: true
 
   list-tools:
     desc: "List tool versions"
@@ -214,6 +213,7 @@ tasks:
     cmds:
       - cmd: git submodule update --init
       - task install-tools
+      - task tidy
       - cmd: cp env.example .env
       - cmd: "echo Update .env file with your values"
     silent: false
