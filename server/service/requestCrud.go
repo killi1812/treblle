@@ -18,7 +18,7 @@ type ListRequestsParams struct {
 	Offset int
 
 	// Sorting
-	SortBy string // "created_at" or "response_time"
+	SortBy string // "created_at" or "response_time" or "latency"
 	Order  string // "asc" or "desc"
 }
 
@@ -77,10 +77,15 @@ func (s *RequestCrudService) List(params ListRequestsParams) ([]model.Request, i
 			order = "desc"
 		}
 
-		// Sanitize sort column to prevent SQL injection
-		column := "created_at" // default sort
-		if params.SortBy == "response_time" {
+		var column string
+		switch params.SortBy {
+		case "created_at":
+			column = "created_at"
+		case "response_time":
 			column = "response_time"
+		case "latency":
+			column = "latency"
+
 		}
 		query = query.Order(column + " " + order)
 	} else {

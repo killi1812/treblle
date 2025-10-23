@@ -44,7 +44,7 @@ func (cnt *RequestCtn) RegisterEndpoints(router *gin.RouterGroup) {
 //	@Param			response	query		int		false	"Filter by response status code (e.Example, 200, 404)"
 //	@Param			limit		query		int		false	"Pagination limit"	default(20)
 //	@Param			offset		query		int		false	"Pagination offset"
-//	@Param			sort_by		query		string	false	"Sort by field (created_at or response_time)"	enums(created_at, response_time)
+//	@Param			sort_by		query		string	false	"Sort by field (created_at or response_time)"	enums(created_at, response_time, latency)
 //	@Param			order		query		string	false	"Sort order (asc or desc)"						enums(asc, desc)
 //	@Success		200			{object}	dto.ResDataDto
 //	@Failure		400			{object}	dto.ErrorDto

@@ -94,7 +94,8 @@ const docTemplate = `{
                     {
                         "enum": [
                             "created_at",
-                            "response_time"
+                            "response_time",
+                            "latency"
                         ],
                         "type": "string",
                         "description": "Sort by field (created_at or response_time)",

@@ -109,6 +109,7 @@ paths:
         enum:
         - created_at
         - response_time
+        - latency
         in: query
         name: sort_by
         type: string
