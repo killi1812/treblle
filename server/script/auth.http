@@ -1,0 +1,52 @@
+# @name auth
+#
+# Authentication requests for the API
+
+# Variables - You can change these to match your test environment
+@host = http://localhost
+@port = 8090
+@email = superadmin@test.hr
+@password = Pa$$w0rd
+
+###
+# @name login
+# User Login
+# This request sends login credentials and captures the access and refresh tokens
+# from the response into global variables for subsequent requests.
+POST {{host}}:{{port}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+# @lang=lua
+> {%
+  local json = vim.json.decode(response.body)
+  client.global.set("accessToken", json.accessToken);
+%}
+
+###
+# @name refreshToken
+# Refresh Access Token
+# This request uses the captured refresh token to get a new access token.
+POST {{host}}:{{port}}/api/auth/refresh
+Authorization: Bearer {{accessToken}}
+
+# @lang=lua
+> {%
+  local json = vim.json.decode(response.body)
+  client.global.set("accessToken", json.accessToken);
+%}
+
+###
+# @name User Logout
+# User logout
+# This request logs out the logged in user
+POST {{host}}:{{port}}/api/auth/logout
+Authorization: Bearer {{accessToken}}
+
+# @lang=lua
+> {%
+  client.global.set("accessToken", "");
+%}

@@ -1,0 +1,210 @@
+version: "3"
+
+vars:
+  BINARY_DIR: ./build
+  # TODO: change project name
+  PACKAGE: "treblle"
+  TEST_PCKGS: "./util/* ./controller ./service ./dto "
+
+tasks:
+  default:
+    cmds:
+      - task: list-tools
+
+  dev:
+    desc: "Start app in development mode"
+    deps: [dc-start, generate-swagger]
+    cmds:
+      - defer: { task: dc-stop }
+      - task: dev-deps
+    silent: true
+    signal: SIGINT
+
+  build:
+    desc: "Build app in production"
+    dir: ./server
+    vars:
+      BUILD: "prod"
+      VERSION:
+        sh: git describe --tags --always --abbrev=0 --match='v[0-9]*.[0-9]*.[0-9]*' 2> /dev/null | sed 's/^.//'
+      COMMIT_HASH:
+        sh: git rev-parse --short HEAD
+      BUILD_TIMESTAMP:
+        sh: date '+%Y-%m-%dT%H:%M:%S'
+      LDFLAGS: "-X '{{.PACKAGE}}/app.Build={{.BUILD}}' -X '{{.PACKAGE}}/app.Version={{.VERSION}}' -X '{{.PACKAGE}}/app.CommitHash={{.COMMIT_HASH}}' -X '{{.PACKAGE}}/app.BuildTimestamp={{.BUILD_TIMESTAMP}}'"
+    cmds:
+      - cmd: mkdir -p {{.BINARY_DIR}}
+      - cmd: go build -ldflags="{{.LDFLAGS}}" -o {{.BINARY_DIR}} .
+    silent: true
+    signal: SIGINT
+
+  dev-deps:
+    desc: "Used to start both server and webapp in parralel"
+    vars:
+      BUILD: "dev"
+    deps:
+      - task: server-dev
+        vars:
+          BUILD: "{{.BUILD}}"
+      - task: webapp-dev
+    parallel: true
+    internal: true
+    signal: SIGINT
+    silent: true
+
+  server-dev:
+    desc: "start server"
+    dir: ./server
+    vars:
+      VERSION:
+        sh: git describe --tags --always --abbrev=0 --match='v[0-9]*.[0-9]*.[0-9]*' 2> /dev/null | sed 's/^.//'
+      COMMIT_HASH:
+        sh: git rev-parse --short HEAD
+      BUILD_TIMESTAMP:
+        sh: date '+%Y-%m-%dT%H:%M:%S'
+      LDFLAGS: "-X '{{.PACKAGE}}/app.Build={{.BUILD}}' -X '{{.PACKAGE}}/app.Version={{.VERSION}}' -X '{{.PACKAGE}}/app.CommitHash={{.COMMIT_HASH}}' -X '{{.PACKAGE}}/app.BuildTimestamp={{.BUILD_TIMESTAMP}}'"
+    cmds:
+      - cmd: task tidy
+      - cmd: "echo 'Build info\n\tBuild:\t\t{{.BUILD}}\n\tVersion:\t{{.VERSION}}\n\tCommit:\t\t{{.COMMIT_HASH}}\n\tTime Stamp:\t{{.BUILD_TIMESTAMP}}'"
+      - cmd: air -build.cmd='go build -ldflags="{{.LDFLAGS}}" -o ./tmp/main .'
+    signal: SIGINT
+    internal: true
+    silent: true
+
+  webapp-dev:
+    desc: "Runs client app"
+    dir: ./client
+    cmds:
+      - cmd: npm install
+      - cmd: npm run dev
+    signal: SIGINT
+    internal: true
+    silent: true
+
+  # _______________________
+  # |                     |
+  # |    server helpers   |
+  # |_____________________|
+
+  tidy:
+    desc: "Runs go mod tidy"
+    dir: ./server
+    cmds:
+      - cmd: go mod tidy
+    silent: false
+    internal: false
+
+  generate-swagger:
+    desc: "Generate swagger documentation"
+    dir: ./server
+    cmds:
+      - cmd: swag fmt
+      - cmd: swag init
+    silent: true
+    internal: true
+
+  tunel:
+    desc: "Open a temporary tunnel to app"
+    cmd: cloudflared tunnel --url http://localhost:8091
+    # cmd: cloudflared tunnel --config ~/.cloudflared/config.yml run pc-dev
+    silent: true
+    internal: false
+
+  # _______________________
+  # |                     |
+  # |       testing       |
+  # |_____________________|
+  test:
+    desc: "Run all tests"
+    cmds:
+      - task: test-server
+
+  coverage:
+    desc: "Produce project coverage"
+    cmds:
+      - task: coverage-server
+
+  test-server:
+    desc: "Run server tests"
+    dir: ./server
+    cmd: go test -v {{.TEST_PCKGS}} -parallel 10
+    silent: true
+    internal: true
+
+  coverage-server:
+    desc: "Produce server coverage"
+    dir: ./server
+    cmds:
+      - cmd: go test {{.TEST_PCKGS}} -coverprofile=coverage.out
+      - cmd: go tool cover -html=coverage.out
+    silent: true
+    internal: true
+
+  # _______________________
+  # |                     |
+  # |    docker compose   |
+  # |_____________________|
+  dc-start:
+    desc: "Start docker deps"
+    cmds:
+      - cmd: "echo Starting docker dependencies"
+      - cmd: docker-compose up -d
+    silent: true
+
+  dc-stop:
+    desc: "Stop docker deps"
+    cmds:
+      - cmd: "echo Stoping docker dependencies"
+      - cmd: docker-compose stop
+    silent: true
+
+  dc-clean:
+    desc: "Stop docker deps"
+    cmd: docker-compose down -v
+    silent: true
+  # _______________________
+  # |                     |
+  # |    Docker build     |
+  # |_____________________|
+
+  d-build:
+    desc: "build a docker image"
+    vars:
+      VERSION:
+        sh: git describe --tags --always --abbrev=0 --match='v[0-9]*.[0-9]*.[0-9]*' 2> /dev/null | sed 's/^.//'
+    cmds:
+      - cmd: mkdir -p {{.BINARY_DIR}}
+      - cmd: docker build --tag {{.PACKAGE}} --tag {{.VERSION}} ./
+      - cmd: docker save -o {{.BINARY_DIR}}/{{.PACKAGE}}-{{.VERSION}}.tar {{.PACKAGE}}:latest
+
+    silent: true
+
+  # _______________________
+  # |                     |
+  # |       tools         |
+  # |_____________________|
+
+  install-tools:
+    desc: Install all the tools needed for project
+    cmds:
+      - cmd: go install github.com/air-verse/air@latest
+      - cmd: go install github.com/swaggo/swag/cmd/swag@latest
+    silent: false
+
+  list-tools:
+    desc: "List tool versions"
+    cmds:
+      - go version
+      - cmd: "echo --------------------------------------------"
+      - task --version
+      - cmd: "echo --------------------------------------------"
+      - air -v
+      - cmd: "echo --------------------------------------------"
+      - swag --version
+      - cmd: "echo --------------------------------------------"
+      - docker --version
+      - cmd: "echo --------------------------------------------"
+      - docker-compose --version
+      - cmd: "echo --------------------------------------------"
+      - cmd: "echo npm version: $(npm --version)"
+    silent: true

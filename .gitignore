@@ -1,0 +1,42 @@
+# Logs
+log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# not used files
+.DS_Store
+/dist
+*.old
+tmp
+temp
+*.tmp
+
+# Sensitive environment variables
+.env
+.env.local
+.env.*.local
+
+# Modules + built files
+node_modules
+dist
+dist-ssr
+*.local
+build
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# test results
+coverage.out

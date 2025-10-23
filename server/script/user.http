@@ -1,0 +1,98 @@
+# @name user
+#
+# Requests for the User controller
+
+# This file assumes you have already run the 'login' request from 'auth.http'
+# to populate the {{accessToken}} variable.
+
+@host = http://localhost
+@port = 8090
+
+# --- Variables for testing ---
+@oib_to_test = 12345678901
+
+###
+# @name createUser
+# Create a new user.
+# NOTE: This endpoint requires admin/superadmin privileges.
+POST {{host}}:{{port}}/api/user
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "username": "jonny",
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "password123",
+  "oib": "{{oib_to_test}}",
+  "birthDate": "1990-01-15",
+  "residence": "123 Main St, Anytown",
+  "role": "user"
+}
+# @lang=lua
+> {%
+  local json = vim.json.decode(response.body)
+  client.global.set("uuid_to_test", json.uuid);
+%}
+
+
+###
+# @name getMyData
+# Get the data for the currently logged-in user.
+GET {{host}}:{{port}}/api/user/my-data
+Authorization: Bearer {{accessToken}}
+
+###
+# @name getUserByUuid
+# Get a specific user by their UUID.
+# NOTE: This endpoint requires admin/superadmin privileges.
+GET {{host}}:{{port}}/api/user/{{uuid_to_test}}
+Authorization: Bearer {{accessToken}}
+
+###
+# @name getUserByOib
+# Get a specific user by their OIB.
+# NOTE: This endpoint requires admin/superadmin privileges.
+GET {{host}}:{{port}}/api/user/oib/{{oib_to_test}}
+Authorization: Bearer {{accessToken}}
+
+###
+# @name searchUsers
+# Search for users by name.
+# NOTE: This endpoint requires admin/superadmin privileges.
+GET {{host}}:{{port}}/api/user/search?query=John
+Authorization: Bearer {{accessToken}}
+
+###
+# @name getAllUsers
+# Get a list of all users.
+# NOTE: This endpoint requires superadmin privileges.
+GET {{host}}:{{port}}/api/user/all-users
+Authorization: Bearer {{accessToken}}
+
+###
+# @name updateUser
+# Update an existing user's data.
+# NOTE: This endpoint requires admin/superadmin privileges.
+PUT {{host}}:{{port}}/api/user/{{uuid_to_test}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "uuid": "{{uuid_to_test}}",
+  "firstName": "John",
+  "lastName": "Doeman",
+  "email": "john.doeman@example.com",
+  "oib": "{{oib_to_test}}",
+  "birthDate": "1990-01-15",
+  "residence": "456 New St, Anytown",
+  "role": "user"
+}
+
+###
+# @name deleteUser
+# Delete a user by their UUID.
+# NOTE: This endpoint requires admin/superadmin privileges.
+DELETE {{host}}:{{port}}/api/user/{{uuid_to_test}}
+Authorization: Bearer {{accessToken}}

@@ -1,0 +1,9 @@
+
+@host = http://localhost
+@port = 8090
+
+###
+# @name GetServerInfo
+# Pings the /api/info endpoint to get build and version information about the server.
+GET {{host}}:{{port}}/api/info
+Content-Type: application/json
