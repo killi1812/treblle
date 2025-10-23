@@ -209,11 +209,12 @@ tasks:
       - cmd: "echo npm version: $(npm --version)"
     silent: true
 
-    setup-env:
-      desc: setup environment before runing the deb task
-      cmds:
-        - cmd: git submodule update --init
-        - task install-tools
-        - cmd: cp env.example .env
-        - cmd: "echo Update .env file with your values"
-      silent: false
+  setup-env:
+    desc: setup environment before runing the deb task
+    cmds:
+      - cmd: git submodule update --init
+      - task install-tools
+      - cmd: cp env.example .env
+      - cmd: "echo Update .env file with your values"
+    silent: false
+    internal: false
