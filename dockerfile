@@ -1,33 +1,38 @@
-# TODO: add building for frontend
-
-# Stage 2: Build the backend
 FROM golang:1.25 AS builder
+
 WORKDIR /app
 
-# Install Task runner
 RUN go install github.com/go-task/task/v3/cmd/task@latest
 
-# Copy Go module files and download dependencies first for caching
-COPY ./server/go.mod ./server/go.sum ./
-RUN go mod download
+COPY ./server/go.mod ./server/go.sum ./server/
+RUN cd server && go mod download
 
-# Copy the taskfile so we can use it
 COPY taskfile.yaml .
 
-# Copy the entire server source code
 COPY . .
 
-# Copy the built frontend assets from the 'frontend' stage
-# COPY --from=frontend /app/client/dist ./server/client/dist
+# Ensure taskfile.yaml uses CGO_ENABLED=0 GOOS=linux GOARCH=amd64 in its build command
+# The build command below assumes taskfile.yaml is configured for static linking
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 task build
+# --- Add a check to see if the build actually produced the file ---
+RUN ls -l /app/server/build/
 
-RUN task build
+# --- Stage 2: Final image using Alpine ---
+FROM alpine:latest
 
-FROM gcr.io/distroless/static-debian11
-WORKDIR /
+# Install ca-certificates (for HTTPS calls from Go) and curl (for healthcheck)
+RUN apk add --no-cache ca-certificates curl
 
-# Copy only the compiled binary from the builder stage
-COPY --from=builder ./app/server/build/template /treblle
+WORKDIR /app
+
+COPY --from=builder /app/server/build/treblle .
+
+RUN chmod +x ./treblle
+
+# Expose the port the Go app listens on
+EXPOSE 8090
 
 # Set the entrypoint for the container
-ENTRYPOINT ["/treblle"]
+ENTRYPOINT ["./treblle"]
+
 

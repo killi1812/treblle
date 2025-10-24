@@ -20,6 +20,8 @@ npm-debug.log
 Dockerfile
 .dockerignore
 README.md
+docker-compose.yaml
+deployment.yaml
 
 # build
 [Bb]uild/
@@ -40,3 +42,5 @@ tmp/
 .vscode/
 .idea/
 *.tar
+
+client/

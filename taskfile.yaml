@@ -11,10 +11,17 @@ tasks:
       - task: list-tools
 
   dev:
-    desc: "Start app in development mode"
+    desc: "Start app and its dependencies in development mode"
     deps: [dc-start, generate-swagger]
     cmds:
       - defer: { task: dc-stop }
+      - task: dev-deps
+    silent: true
+    signal: SIGINT
+
+  run:
+    desc: "Start app in development mode"
+    cmds:
       - task: dev-deps
     silent: true
     signal: SIGINT
@@ -24,6 +31,7 @@ tasks:
     dir: ./server
     vars:
       BUILD: "prod"
+      # BUILD: "dev"
       VERSION:
         sh: git describe --tags --always --abbrev=0 --match='v[0-9]*.[0-9]*.[0-9]*' 2> /dev/null | sed 's/^.//'
       COMMIT_HASH:
@@ -33,7 +41,7 @@ tasks:
       LDFLAGS: "-X '{{.PACKAGE}}/app.Build={{.BUILD}}' -X '{{.PACKAGE}}/app.Version={{.VERSION}}' -X '{{.PACKAGE}}/app.CommitHash={{.COMMIT_HASH}}' -X '{{.PACKAGE}}/app.BuildTimestamp={{.BUILD_TIMESTAMP}}'"
     cmds:
       - cmd: mkdir -p {{.BINARY_DIR}}
-      - cmd: go build -ldflags="{{.LDFLAGS}}" -o {{.BINARY_DIR}} .
+      - cmd: go build -ldflags="{{.LDFLAGS}}" -o {{.BINARY_DIR}}/{{.PACKAGE}} .
     silent: true
     signal: SIGINT
 
@@ -173,8 +181,16 @@ tasks:
         sh: git describe --tags --always --abbrev=0 --match='v[0-9]*.[0-9]*.[0-9]*' 2> /dev/null | sed 's/^.//'
     cmds:
       - cmd: mkdir -p {{.BINARY_DIR}}
+      - cmd: "echo --------------------------------------------"
+      - cmd: "echo Building backend"
+      - cmd: "echo --------------------------------------------"
       - cmd: docker build --tag {{.PACKAGE}} --tag {{.VERSION}} ./
-      - cmd: docker save -o {{.BINARY_DIR}}/{{.PACKAGE}}-{{.VERSION}}.tar {{.PACKAGE}}:latest
+      - cmd: docker save -o {{.BINARY_DIR}}/{{.PACKAGE}}.tar {{.PACKAGE}}:latest
+      - cmd: "echo --------------------------------------------"
+      - cmd: "echo Building frontend"
+      - cmd: "echo --------------------------------------------"
+      - cmd: docker build --tag {{.PACKAGE}}-frontend --tag {{.VERSION}} ./client/
+      - cmd: docker save -o {{.BINARY_DIR}}/{{.PACKAGE}}-frontend.tar {{.PACKAGE}}-frontend:latest
 
     silent: true
 

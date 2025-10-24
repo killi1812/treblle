@@ -56,7 +56,7 @@ func NewLobby() *Lobby {
 		zap.S().Debugf("Lobby state: %+v", state)
 		lobby.Hub.Broadcast <- updatedState
 	}
-	task := NewPeriodicTask(actionFunc, 2*time.Second)
+	task := NewPeriodicTask(actionFunc, 10*time.Second)
 	go lobby.Hub.Run(task.Stop)
 	task.Start()
 	lobby.task = task

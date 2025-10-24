@@ -34,7 +34,7 @@ func NewRequestCtn() app.Controller {
 func (cnt *RequestCtn) RegisterEndpoints(router *gin.RouterGroup) {
 	router.GET("/requests", cnt.ListRequests)
 	router.GET("/requests/statistics", cnt.GetRequestStatistics)
-	router.GET("/requests/statistics/ws", cnt.serveChartWs)
+	router.GET("/ws/requests/statistics", cnt.serveChartWs)
 }
 
 // ListRequests godoc
@@ -192,7 +192,7 @@ func (cnt *RequestCtn) GetRequestStatistics(c *gin.Context) {
 //	@Tags			chart
 //	@Produce		json
 //	@Failure		500
-//	@Router			/requests/statistics/ws [get]
+//	@Router			/ws/requests/statistics [get]
 func (cnt *RequestCtn) serveChartWs(c *gin.Context) {
 	conn, err := ws.Upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

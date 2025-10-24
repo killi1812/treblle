@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: treblle
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5332:5432"
+    networks:
+      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "${POSTGRES_DB}"]
+      start_period: 2s
+      interval: 5s
+      retries: 3
+      timeout: 5s
+
+  backend:
+    image: treblle:latest
+    restart: unless-stopped
+    environment:
+      GIN_MODE: release
+      PORT: 8090
+      PROXY_URL: https://www.thecocktaildb.com
+      POSTGRES_DB: treblle
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      DB_CONN: "host=postgres user=postgres password=postgres dbname=treblle port=5432 sslmode=disable TimeZone=UTC"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8090/api/info"]
+      start_period: 1s
+      interval: 5s
+      retries: 3
+      timeout: 5s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: treblle-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
